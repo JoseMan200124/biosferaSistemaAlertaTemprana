@@ -1,0 +1,78 @@
+name: Deploy Static Frontend to GCS
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-gcs-static-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  OUTPUT_DIR: "out"
+  INSTALL_CMD: "npm ci"
+  BUILD_CMD: "npm run build"
+  EXPORT_CMD: "npm run export"
+  GCS_BUCKET: "${{ vars.GCS_BUCKET }}"
+  INVALIDATE_CDN: "${{ vars.INVALIDATE_CDN }}"
+  URL_MAP_NAME: "${{ vars.URL_MAP_NAME }}"
+  INVALIDATION_PATH: "/*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: ${{ env.INSTALL_CMD }}
+
+      - run: ${{ env.BUILD_CMD }}
+
+      - if: ${{ env.EXPORT_CMD != '' }}
+        run: ${{ env.EXPORT_CMD }}
+
+      - run: |
+          if [ ! -d "${{ env.OUTPUT_DIR }}" ]; then
+            echo "OUTPUT_DIR '${{ env.OUTPUT_DIR }}' no existe."
+            exit 1
+          fi
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: |
+          gsutil -m rsync -r -d "${{ env.OUTPUT_DIR }}" "gs://${{ env.GCS_BUCKET }}"
+
+      - shell: bash
+        run: |
+          set -euo pipefail
+          BUCKET="gs://${{ env.GCS_BUCKET }}"
+
+          gsutil ls -r "${BUCKET}/**" | gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" -I || true
+          gsutil ls -r "${BUCKET}/**.html" | gsutil -m setmeta -h "Cache-Control:no-cache, max-age=0, must-revalidate" -I || true
+
+          for f in "sw.js" "service-worker.js"; do
+            if gsutil -q stat "${BUCKET}/${f}"; then
+              gsutil setmeta -h "Cache-Control:no-cache, max-age=0, must-revalidate" "${BUCKET}/${f}"
+            fi
+          done
+
+      - if: ${{ env.INVALIDATE_CDN == 'true' && env.URL_MAP_NAME != '' }}
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache "${{ env.URL_MAP_NAME }}" --path "${{ env.INVALIDATION_PATH }}" --async
