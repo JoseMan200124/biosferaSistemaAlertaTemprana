@@ -1,58 +1,178 @@
+// Panel de alertas rediseñado con estilos por nivel y datos mock
+// para mantener consistencia visual durante desarrollo.
+
 'use client';
 
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import Skeleton from '@mui/material/Skeleton';
+import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
-import { useAlerts } from '@/features/alerts-panel/api/useAlerts';
+import Stack from '@mui/material/Stack';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import AirRoundedIcon from '@mui/icons-material/AirRounded';
+import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
 
-const sevColor: Record<string, 'default' | 'warning' | 'error' | 'success' | 'info'> = {
-  low: 'info',
-  medium: 'warning',
-  high: 'error',
+type AlertItem = {
+  id: string;
+  title: string;
+  description: string;
+  level: 'high' | 'medium' | 'low';
+  type: 'rain' | 'wind' | 'fire';
 };
 
+const mockAlerts: AlertItem[] = [
+  {
+    id: '1',
+    title: 'Lluvia fuerte',
+    description: 'Precipitación intensa prevista para las próximas horas.',
+    level: 'high',
+    type: 'rain',
+  },
+  {
+    id: '2',
+    title: 'Viento',
+    description: 'Ráfagas moderadas en la zona monitoreada.',
+    level: 'medium',
+    type: 'wind',
+  },
+  {
+    id: '3',
+    title: 'Fuego',
+    description: 'Posible punto de calor detectado en área cercana.',
+    level: 'high',
+    type: 'fire',
+  },
+];
+
+function getAlertStyles(level: AlertItem['level']) {
+  switch (level) {
+    case 'high':
+      return {
+        bg: '#FEF2F2',
+        border: '#FECACA',
+        title: '#B91C1C',
+      };
+    case 'medium':
+      return {
+        bg: '#FFF7ED',
+        border: '#FED7AA',
+        title: '#C2410C',
+      };
+    case 'low':
+    default:
+      return {
+        bg: '#EFF6FF',
+        border: '#BFDBFE',
+        title: '#1D4ED8',
+      };
+  }
+}
+
+function getAlertIcon(type: AlertItem['type']) {
+  switch (type) {
+    case 'rain':
+      return <WarningAmberRoundedIcon sx={{ color: '#B91C1C' }} />;
+    case 'wind':
+      return <AirRoundedIcon sx={{ color: '#C2410C' }} />;
+    case 'fire':
+      return <LocalFireDepartmentRoundedIcon sx={{ color: '#B91C1C' }} />;
+    default:
+      return <WarningAmberRoundedIcon sx={{ color: '#184A72' }} />;
+  }
+}
+
 export function AlertsPanel() {
-  const q = useAlerts();
+  const hasApiError = true;
+  const alertsToRender = mockAlerts;
 
   return (
-    <Card variant="outlined">
-      <CardContent>
-        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
+    <Card
+      sx={{
+        borderRadius: 3,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        border: '1px solid #E5E7EB',
+        backgroundColor: '#FFFFFF',
+      }}
+    >
+      <CardContent sx={{ p: 2.5 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            color: '#184A72',
+            fontWeight: 800,
+            mb: 2,
+          }}
+        >
           Alertas
         </Typography>
 
-        {q.isLoading && (
-          <Stack spacing={1}>
-            <Skeleton height={32} />
-            <Skeleton height={32} />
-            <Skeleton height={32} />
-          </Stack>
+        {hasApiError && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Mostrando alertas de prueba.
+          </Alert>
         )}
 
-        {q.isError && <Alert severity="error">No se pudieron cargar alertas.</Alert>}
+        <Stack spacing={1.5}>
+          {alertsToRender.map((alertItem) => {
+            const styles = getAlertStyles(alertItem.level);
 
-        {q.data && (
-          <Stack spacing={1}>
-            {q.data.map((a) => (
-              <Stack
-                key={a.id}
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                justifyContent="space-between"
+            return (
+              <Box
+                key={alertItem.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1.5,
+                  p: 1.75,
+                  borderRadius: 2,
+                  backgroundColor: styles.bg,
+                  border: `1px solid ${styles.border}`,
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  },
+                }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {a.title}
-                </Typography>
-                <Chip size="small" color={sevColor[a.severity] ?? 'default'} label={a.severity} />
-              </Stack>
-            ))}
-          </Stack>
-        )}
+                <Box
+                  sx={{
+                    mt: 0.2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {getAlertIcon(alertItem.type)}
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 700,
+                      color: styles.title,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {alertItem.title}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#35566E',
+                      mt: 0.4,
+                    }}
+                  >
+                    {alertItem.description}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
+        </Stack>
       </CardContent>
     </Card>
   );

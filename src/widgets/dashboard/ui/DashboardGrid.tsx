@@ -1,3 +1,5 @@
+// Layout reorganizado para acercarse al mockup aprobado:
+// mapa arriba, pronostico debajo y columna derecha con filtros + alertas.
 'use client';
 
 import Grid from '@mui/material/Grid';
@@ -9,28 +11,36 @@ import { FiltersPanel } from '@/features/filters';
 
 export function DashboardGrid() {
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={3} alignItems="stretch">
+      {/* KPIs arriba */}
       <Grid item xs={12}>
         <KpiCards />
       </Grid>
 
+      {/* Columna izquierda: mapa + pronóstico */}
       <Grid item xs={12} lg={8}>
-        <MapView />
-      </Grid>
-
-      <Grid item xs={12} lg={4}>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           <Grid item xs={12}>
-            <FiltersPanel />
+            <MapView />
           </Grid>
+
           <Grid item xs={12}>
-            <AlertsPanel />
+            <ForecastPanel />
           </Grid>
         </Grid>
       </Grid>
 
-      <Grid item xs={12}>
-        <ForecastPanel />
+      {/* Columna derecha: filtros + alertas */}
+      <Grid item xs={12} lg={4}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <FiltersPanel />
+          </Grid>
+
+          <Grid item xs={12}>
+            <AlertsPanel />
+          </Grid>
+        </Grid>
       </Grid>
     </Grid>
   );
