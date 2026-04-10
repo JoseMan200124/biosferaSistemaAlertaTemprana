@@ -1,5 +1,3 @@
-// Panel de filtros maquetado con selects y checkboxes.
-// Actualmente usa opciones mock para avanzar la UI.
 'use client';
 
 import Card from '@mui/material/Card';
@@ -16,8 +14,17 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 
+import { locationOptions, useLocationStore } from '@/shared/store/useLocationStore';
+
 export function FiltersPanel() {
-  const hasApiError = true;
+  const { selectedLocation, setSelectedLocation } = useLocationStore();
+
+  const handleLocationChange = (municipio: string) => {
+    const found = locationOptions.find((item) => item.municipio === municipio);
+    if (found) {
+      setSelectedLocation(found);
+    }
+  };
 
   return (
     <Card
@@ -40,19 +47,16 @@ export function FiltersPanel() {
           Filtros
         </Typography>
 
-        {hasApiError && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Mostrando filtros de prueba.
-          </Alert>
-        )}
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Selección dinámica de ubicación activa.
+        </Alert>
 
         <Stack spacing={2}>
-          {/* Zona */}
           <FormControl fullWidth size="small">
             <InputLabel>Zona</InputLabel>
             <Select
               label="Zona"
-              defaultValue="zona-centro"
+              value={selectedLocation.zona}
               sx={{
                 borderRadius: 2,
                 backgroundColor: '#FFFFFF',
@@ -63,19 +67,21 @@ export function FiltersPanel() {
                   borderColor: '#3FADBA',
                 },
               }}
+              readOnly
             >
-              <MenuItem value="zona-centro">Zona Centro</MenuItem>
-              <MenuItem value="zona-norte">Zona Norte</MenuItem>
-              <MenuItem value="zona-sur">Zona Sur</MenuItem>
+              {locationOptions.map((item) => (
+                <MenuItem key={item.municipio} value={item.zona}>
+                  {item.zona}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
-          {/* Departamento */}
           <FormControl fullWidth size="small">
             <InputLabel>Departamento</InputLabel>
             <Select
               label="Departamento"
-              defaultValue="guatemala"
+              value={selectedLocation.departamento}
               sx={{
                 borderRadius: 2,
                 backgroundColor: '#FFFFFF',
@@ -86,19 +92,22 @@ export function FiltersPanel() {
                   borderColor: '#3FADBA',
                 },
               }}
+              readOnly
             >
-              <MenuItem value="guatemala">Guatemala</MenuItem>
-              <MenuItem value="sacatepequez">Sacatepéquez</MenuItem>
-              <MenuItem value="escuintla">Escuintla</MenuItem>
+              {locationOptions.map((item) => (
+                <MenuItem key={item.municipio} value={item.departamento}>
+                  {item.departamento}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
-          {/* Municipio */}
           <FormControl fullWidth size="small">
             <InputLabel>Municipio</InputLabel>
             <Select
               label="Municipio"
-              defaultValue="guatemala-city"
+              value={selectedLocation.municipio}
+              onChange={(e) => handleLocationChange(e.target.value)}
               sx={{
                 borderRadius: 2,
                 backgroundColor: '#FFFFFF',
@@ -110,15 +119,16 @@ export function FiltersPanel() {
                 },
               }}
             >
-              <MenuItem value="guatemala-city">Guatemala</MenuItem>
-              <MenuItem value="mixco">Mixco</MenuItem>
-              <MenuItem value="villa-nueva">Villa Nueva</MenuItem>
+              {locationOptions.map((item) => (
+                <MenuItem key={item.municipio} value={item.municipio}>
+                  {item.municipio}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
           <Divider sx={{ my: 1 }} />
 
-          {/* Capas */}
           <Box>
             <Typography
               variant="body2"
