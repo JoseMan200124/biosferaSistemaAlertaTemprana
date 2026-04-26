@@ -1,13 +1,16 @@
-// Layout reorganizado para acercarse al mockup aprobado:
-// mapa arriba, pronostico debajo y columna derecha con filtros + alertas.
 'use client';
 
 import Grid from '@mui/material/Grid';
 import { KpiCards } from '@/features/dashboard-kpis';
-import { MapView } from '@/features/map-view';
 import { AlertsPanel } from '@/features/alerts-panel';
 import { ForecastPanel } from '@/features/forecast-panel';
 import { FiltersPanel } from '@/features/filters';
+import dynamic from 'next/dynamic';
+
+const MapView = dynamic(() => import('@/features/map-view').then((mod) => mod.MapView), {
+  ssr: false,
+  loading: () => <div style={{ height: 420 }}>Cargando mapa...</div>,
+});
 
 export function DashboardGrid() {
   return (

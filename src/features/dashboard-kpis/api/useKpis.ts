@@ -43,11 +43,5 @@ export async function getKpis(lat: number, lon: number): Promise<KpiItem[]> {
       value: Math.round((data.wind?.speed ?? 0) * 3.6),
       unit: 'km/h',
     },
-    {
-      key: 'precipitation',
-      label: 'Probabilidad de lluvia',
-      value: 0,
-      unit: '%',
-    },
   ];
 }

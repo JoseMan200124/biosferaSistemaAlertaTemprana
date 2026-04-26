@@ -11,7 +11,6 @@ import Box from '@mui/material/Box';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AirIcon from '@mui/icons-material/Air';
-import ThunderstormIcon from '@mui/icons-material/Thunderstorm';
 
 import { getKpis, type KpiItem } from '../api/useKpis';
 import { useLocationStore } from '@/shared/store/useLocationStore';
@@ -20,7 +19,6 @@ const mockKpis: KpiItem[] = [
   { key: 'temperature', label: 'Temperatura', value: 24, unit: '°C' },
   { key: 'humidity', label: 'Humedad', value: 78, unit: '%' },
   { key: 'wind', label: 'Viento', value: 12, unit: 'km/h' },
-  { key: 'precipitation', label: 'Probabilidad de lluvia', value: 0, unit: '%' },
 ];
 
 const getTemperatureColor = (temp: number) => {
@@ -37,8 +35,6 @@ const getIcon = (key: string, value: number) => {
       return <WaterDropIcon sx={{ color: '#3FADBA' }} />;
     case 'wind':
       return <AirIcon sx={{ color: '#3FADBA' }} />;
-    case 'precipitation':
-      return <ThunderstormIcon sx={{ color: '#3FADBA' }} />;
     default:
       return <ThermostatIcon sx={{ color: '#3FADBA' }} />;
   }
@@ -87,8 +83,8 @@ export function KpiCards() {
   if (loading) {
     return (
       <Grid container spacing={2}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Grid key={i} item xs={12} sm={6} md={3}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Grid key={i} item xs={12} sm={6} md={4}>
             <Skeleton variant="rounded" height={110} />
           </Grid>
         ))}
@@ -117,7 +113,7 @@ export function KpiCards() {
           const unitColor = isTemperature ? getTemperatureColor(k.value) : '#3FADBA';
 
           return (
-            <Grid key={k.key} item xs={12} sm={6} md={3}>
+            <Grid key={k.key} item xs={12} sm={6} md={4}>
               <Card
                 sx={{
                   borderRadius: 3,

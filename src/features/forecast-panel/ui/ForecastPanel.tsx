@@ -120,13 +120,18 @@ function buildDailyForecast(apiData: any): ForecastDay[] {
   return days.map(([date, entries], index) => {
     const preferredEntry = entries.find((item) => item.dt_txt?.includes('12:00:00')) || entries[0];
 
+    //Mejoramos la probabilidad de lluvia
+    const maxRainProbability = Math.max(
+      ...entries.map((item) => Math.round((item.pop ?? 0) * 100)),
+    );
+
     return {
       id: `day${index + 1}`,
       label: getDayLabel(date, index),
       temperature: `${Math.round(preferredEntry.main.temp)} °C`,
       humidity: `${preferredEntry.main.humidity} %`,
       wind: `${Math.round(preferredEntry.wind.speed * 3.6)} km/h`,
-      precipitation: `${preferredEntry.pop ? Math.round(preferredEntry.pop * 100) : 0} %`,
+      precipitation: `${maxRainProbability} %`,
       description: formatWeatherText(preferredEntry.weather?.[0]?.description ?? 'sin descripción'),
     };
   });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -9,21 +10,55 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { locationOptions, useLocationStore } from '@/shared/store/useLocationStore';
 
 export function FiltersPanel() {
-  const { selectedLocation, setSelectedLocation } = useLocationStore();
+  const { selectedLocation, setSelectedLocation, activeLayer, setActiveLayer } = useLocationStore();
 
-  const handleLocationChange = (municipio: string) => {
-    const found = locationOptions.find((item) => item.municipio === municipio);
+  const departamentos = useMemo(() => {
+    return [...new Set(locationOptions.map((item) => item.departamento))].sort((a, b) =>
+      a.localeCompare(b, 'es'),
+    );
+  }, []);
+
+  const municipios = useMemo(() => {
+    return locationOptions
+      .filter((item) => item.departamento === selectedLocation.departamento)
+      .sort((a, b) => a.municipio.localeCompare(b.municipio, 'es'));
+  }, [selectedLocation.departamento]);
+
+  const handleDepartamentoChange = (departamento: string) => {
+    const firstMunicipio = locationOptions
+      .filter((item) => item.departamento === departamento)
+      .sort((a, b) => a.municipio.localeCompare(b.municipio, 'es'))[0];
+
+    if (firstMunicipio) {
+      setSelectedLocation(firstMunicipio);
+    }
+  };
+
+  const handleMunicipioChange = (municipio: string) => {
+    const found = locationOptions.find(
+      (item) => item.departamento === selectedLocation.departamento && item.municipio === municipio,
+    );
+
     if (found) {
       setSelectedLocation(found);
     }
+  };
+
+  const handleLayerToggle = (layer: 'temperature' | 'rain' | 'wind') => {
+    if (activeLayer === layer) {
+      setActiveLayer(null);
+      return;
+    }
+
+    setActiveLayer(layer);
   };
 
   return (
@@ -48,40 +83,16 @@ export function FiltersPanel() {
         </Typography>
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          Selección dinámica de ubicación activa.
+          Selecciona ubicación para actualizar datos y mapa.
         </Alert>
 
         <Stack spacing={2}>
           <FormControl fullWidth size="small">
-            <InputLabel>Zona</InputLabel>
-            <Select
-              label="Zona"
-              value={selectedLocation.zona}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: '#FFFFFF',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#E5E7EB',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3FADBA',
-                },
-              }}
-              readOnly
-            >
-              {locationOptions.map((item) => (
-                <MenuItem key={item.municipio} value={item.zona}>
-                  {item.zona}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth size="small">
             <InputLabel>Departamento</InputLabel>
             <Select
-              label="Departamento"
               value={selectedLocation.departamento}
+              label="Departamento"
+              onChange={(e) => handleDepartamentoChange(e.target.value)}
               sx={{
                 borderRadius: 2,
                 backgroundColor: '#FFFFFF',
@@ -92,11 +103,10 @@ export function FiltersPanel() {
                   borderColor: '#3FADBA',
                 },
               }}
-              readOnly
             >
-              {locationOptions.map((item) => (
-                <MenuItem key={item.municipio} value={item.departamento}>
-                  {item.departamento}
+              {departamentos.map((dep) => (
+                <MenuItem key={dep} value={dep}>
+                  {dep}
                 </MenuItem>
               ))}
             </Select>
@@ -105,9 +115,9 @@ export function FiltersPanel() {
           <FormControl fullWidth size="small">
             <InputLabel>Municipio</InputLabel>
             <Select
-              label="Municipio"
               value={selectedLocation.municipio}
-              onChange={(e) => handleLocationChange(e.target.value)}
+              label="Municipio"
+              onChange={(e) => handleMunicipioChange(e.target.value)}
               sx={{
                 borderRadius: 2,
                 backgroundColor: '#FFFFFF',
@@ -119,36 +129,72 @@ export function FiltersPanel() {
                 },
               }}
             >
-              {locationOptions.map((item) => (
-                <MenuItem key={item.municipio} value={item.municipio}>
+              {municipios.map((item) => (
+                <MenuItem key={`${item.departamento}-${item.municipio}`} value={item.municipio}>
                   {item.municipio}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <Divider sx={{ my: 1 }} />
-
           <Box>
             <Typography
               variant="body2"
               sx={{
+                color: '#6B7280',
+                mb: 0.5,
+                fontWeight: 600,
+              }}
+            >
+              Zona
+            </Typography>
+
+            <Box
+              sx={{
+                px: 2,
+                py: 1.4,
+                borderRadius: 2,
+                border: '1px solid #E5E7EB',
+                backgroundColor: '#F8FAFC',
                 color: '#184A72',
+                fontWeight: 600,
+              }}
+            >
+              {selectedLocation.zona}
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 1 }} />
+
+          <Box>
+            <Typography
+              sx={{
                 fontWeight: 700,
+                color: '#184A72',
                 mb: 1,
               }}
             >
               Capas del mapa
             </Typography>
 
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#6B7280',
+                mb: 1,
+              }}
+            >
+              Solo una capa climática puede estar activa a la vez.
+            </Typography>
+
             <Stack spacing={0.5}>
               <FormControlLabel
                 control={
                   <Checkbox
-                    defaultChecked
+                    checked={activeLayer === 'temperature'}
+                    onChange={() => handleLayerToggle('temperature')}
                     sx={{
                       color: '#3FADBA',
-                      transition: 'all 0.2s ease',
                       '&.Mui-checked': {
                         color: '#3FADBA',
                       },
@@ -161,10 +207,10 @@ export function FiltersPanel() {
               <FormControlLabel
                 control={
                   <Checkbox
-                    defaultChecked
+                    checked={activeLayer === 'rain'}
+                    onChange={() => handleLayerToggle('rain')}
                     sx={{
                       color: '#3FADBA',
-                      transition: 'all 0.2s ease',
                       '&.Mui-checked': {
                         color: '#3FADBA',
                       },
@@ -177,10 +223,10 @@ export function FiltersPanel() {
               <FormControlLabel
                 control={
                   <Checkbox
-                    defaultChecked
+                    checked={activeLayer === 'wind'}
+                    onChange={() => handleLayerToggle('wind')}
                     sx={{
                       color: '#3FADBA',
-                      transition: 'all 0.2s ease',
                       '&.Mui-checked': {
                         color: '#3FADBA',
                       },
